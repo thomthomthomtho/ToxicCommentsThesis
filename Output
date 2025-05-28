@@ -1,0 +1,82 @@
+"/Users/thomdeveling/Documents/Kunstmatige Intelligentie/Jaar 3/Thesis/.venv/bin/python" "/Users/thomdeveling/Documents/Kunstmatige Intelligentie/Jaar 3/Thesis/CountVectorizer(1,2).py"
+(.venv) (base) thomdeveling@MacBook-Air-van-Thom-3 Thesis % "/Users/thomdeveling/Documents/Kunstmatige Intelligentie/Jaar 3/Thesis/.venv/bin/python" "/
+Users/thomdeveling/Documents/Kunstmatige Intelligentie/Jaar 3/Thesis/CountVectorizer(1,2).py"
+Hieronder het aantal NaN comments:
+108
+Vocab grootte: 20000
+Matrix shape: (159463, 20000)
+
+ Training SVM voor label: toxic (testset size: 31893)
+              precision    recall  f1-score   support
+
+           0       0.97      0.99      0.98     28834
+           1       0.86      0.68      0.76      3059
+
+    accuracy                           0.96     31893
+   macro avg       0.92      0.84      0.87     31893
+weighted avg       0.96      0.96      0.96     31893
+
+
+ Now comes the next label
+
+ Training SVM voor label: severe_toxic (testset size: 31893)
+              precision    recall  f1-score   support
+
+           0       0.99      1.00      1.00     31608
+           1       0.52      0.28      0.37       285
+
+    accuracy                           0.99     31893
+   macro avg       0.76      0.64      0.68     31893
+weighted avg       0.99      0.99      0.99     31893
+
+
+ Now comes the next label
+
+ Training SVM voor label: obscene (testset size: 31893)
+              precision    recall  f1-score   support
+
+           0       0.98      0.99      0.99     30199
+           1       0.88      0.70      0.78      1694
+
+    accuracy                           0.98     31893
+   macro avg       0.93      0.85      0.88     31893
+weighted avg       0.98      0.98      0.98     31893
+
+
+ Now comes the next label
+
+ Training SVM voor label: threat (testset size: 31893)
+              precision    recall  f1-score   support
+
+           0       1.00      1.00      1.00     31798
+           1       0.52      0.18      0.27        95
+
+    accuracy                           1.00     31893
+   macro avg       0.76      0.59      0.63     31893
+weighted avg       1.00      1.00      1.00     31893
+
+
+ Now comes the next label
+
+ Training SVM voor label: insult (testset size: 31893)
+              precision    recall  f1-score   support
+
+           0       0.98      0.99      0.98     30324
+           1       0.78      0.56      0.65      1569
+
+    accuracy                           0.97     31893
+   macro avg       0.88      0.78      0.82     31893
+weighted avg       0.97      0.97      0.97     31893
+
+
+ Now comes the next label
+
+ Training SVM voor label: identity_hate (testset size: 31893)
+              precision    recall  f1-score   support
+
+           0       0.99      1.00      1.00     31632
+           1       0.59      0.25      0.35       261
+
+    accuracy                           0.99     31893
+   macro avg       0.79      0.62      0.67     31893
+weighted avg       0.99      0.99      0.99     31893
