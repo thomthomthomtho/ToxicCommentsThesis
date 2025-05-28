@@ -1,0 +1,62 @@
+import os
+import pandas as pd
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.svm import LinearSVC
+from sklearn.metrics import classification_report
+from sklearn.model_selection import train_test_split
+
+# Path to CSV file
+current_directory = os.getcwd()
+processed_path = os.path.join(current_directory, 'data', 'train_processed+.csv')
+df = pd.read_csv(processed_path)
+# Deleting NaN values
+df = df[df['comment_text_clean'].notna()]
+
+vectorizer = TfidfVectorizer(
+    lowercase=False,    # already lowered
+    stop_words=None,    # stop words already removed
+    ngram_range=(1, 2), # just unigrams en bigrams
+    max_features=20000 # limiting the vocabulary
+)
+### ### ### ### ### ### ### ### ### ###
+# CountVectorizer (unigrams + bigrams)
+# vectorizer = CountVectorizer(
+#     lowercase=False,    # already lowered
+#     stop_words=None,    # stop words already removed
+#     ngram_range=(1, 2), # just unigrams en bigrams
+#     max_features=20000 # limiting the vocabulary
+# )
+
+# Fitting and transforming vectorizer
+X = vectorizer.fit_transform(df["comment_text_clean"])
+print(f"Vocab size: {len(vectorizer.vocabulary_)}")
+print(f"Matrix shape: {X.shape}")
+
+# train_df = pd.read_csv(processed_path)
+# X_train = train_df['comment_text_clean']
+# y_train = train_df[['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']]
+
+# Defining labels
+labels = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
+
+# Splitting data in train (80%) and test (20%)
+X = df['comment_text_clean']
+y = df[labels]
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y['toxic']  # stratify on 'toxic' for balance
+)
+
+X_train_vec = vectorizer.fit_transform(X_train)
+X_test_vec = vectorizer.transform(X_test)
+
+# Training the model and evaluating per label
+for label in labels:
+    print(f"\n Training SVM for label: {label} (testset size: {y_test[label].shape[0]})")
+    
+    clf = LinearSVC(max_iter=7500, random_state=42)
+    clf.fit(X_train_vec, y_train[label])
+    
+    y_pred = clf.predict(X_test_vec)
+    print(classification_report(y_test[label], y_pred))
+    print("\n Now comes the next label")
