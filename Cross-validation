@@ -1,0 +1,65 @@
+import os
+import pandas as pd
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.preprocessing import MaxAbsScaler
+from sklearn.svm import LinearSVC
+from sklearn.metrics import classification_report
+from sklearn.model_selection import train_test_split
+from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
+
+# Path to CSV file
+current_directory = os.getcwd()
+processed_path = os.path.join(current_directory, 'data', 'train_processed+.csv')
+df = pd.read_csv(processed_path)
+# Deleting NaN values
+df = df[df['comment_text_clean'].notna()]
+df = df.reset_index(drop=True)
+
+print("Using TfidfVectorizer")
+vectorizer = TfidfVectorizer(
+    lowercase=False,    # already lowered
+    stop_words=None,    # stop words already removed
+    ngram_range=(1, 2), # just unigrams en bigrams
+    # max_features=1500000 # limiting the vocabulary --> This negatively impacts the output
+)
+## ### ### ### ### ### ### ### ### ###
+# CountVectorizer (unigrams + bigrams)
+# print("Using CountVectorizer")
+# vectorizer = CountVectorizer(
+#     lowercase=False,    # already lowered
+#     stop_words=None,    # stop words already removed
+#     ngram_range=(1, 2), # just unigrams en bigrams
+#     # max_features=20000 # limiting the vocabulary
+# )
+
+# Defining labels
+labels = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
+y_all = df[labels]
+X_all_text = df['comment_text_clean']
+
+mskf = MultilabelStratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+
+for fold, (train_idx, test_idx) in enumerate(mskf.split(X_all_text, y_all)):
+    print(f"\n======== Fold {fold + 1} ========")
+    
+    X_train_text = X_all_text[train_idx]
+    X_test_text = X_all_text[test_idx]
+    y_train = y_all.iloc[train_idx]
+    y_test = y_all.iloc[test_idx]
+    
+    X_train_vec = vectorizer.fit_transform(X_train_text)
+    X_test_vec = vectorizer.transform(X_test_text)
+    
+    print(f"Vocab size (fold {fold + 1}): {len(vectorizer.vocabulary_)}")
+    print(f"Train shape: {X_train_vec.shape}, Test shape: {X_test_vec.shape}")
+    
+    # training the model per label
+    for i, label in enumerate(labels):
+        print(f"\nTraining SVM for label: {label}")
+        
+        clf = LinearSVC(C=1.0, class_weight='balanced', max_iter=5000, random_state=42)
+        clf.fit(X_train_vec, y_train.iloc[:, i])
+        
+        y_pred = clf.predict(X_test_vec)
+        print(classification_report(y_test.iloc[:, i], y_pred))
