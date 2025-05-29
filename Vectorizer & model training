@@ -2,6 +2,7 @@ import os
 import pandas as pd
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.preprocessing import MaxAbsScaler
 from sklearn.svm import LinearSVC
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
@@ -13,33 +14,30 @@ df = pd.read_csv(processed_path)
 # Deleting NaN values
 df = df[df['comment_text_clean'].notna()]
 
-vectorizer = TfidfVectorizer(
-    lowercase=False,    # already lowered
-    stop_words=None,    # stop words already removed
-    ngram_range=(1, 2), # just unigrams en bigrams
-    max_features=20000 # limiting the vocabulary
-)
-### ### ### ### ### ### ### ### ### ###
-# CountVectorizer (unigrams + bigrams)
-# vectorizer = CountVectorizer(
+# print("Using TfidfVectorizer")
+# vectorizer = TfidfVectorizer(
 #     lowercase=False,    # already lowered
 #     stop_words=None,    # stop words already removed
 #     ngram_range=(1, 2), # just unigrams en bigrams
-#     max_features=20000 # limiting the vocabulary
+#     # max_features=1500000 # limiting the vocabulary --> This negatively impacts the output
 # )
+## ### ### ### ### ### ### ### ### ###
+CountVectorizer (unigrams + bigrams)
+print("Using CountVectorizer")
+vectorizer = CountVectorizer(
+    lowercase=False,    # already lowered
+    stop_words=None,    # stop words already removed
+    ngram_range=(1, 2), # just unigrams en bigrams
+    # max_features=20000 # limiting the vocabulary
+)
 
 # Fitting and transforming vectorizer
 X = vectorizer.fit_transform(df["comment_text_clean"])
 print(f"Vocab size: {len(vectorizer.vocabulary_)}")
 print(f"Matrix shape: {X.shape}")
 
-# train_df = pd.read_csv(processed_path)
-# X_train = train_df['comment_text_clean']
-# y_train = train_df[['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']]
-
 # Defining labels
 labels = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
-
 # Splitting data in train (80%) and test (20%)
 X = df['comment_text_clean']
 y = df[labels]
@@ -49,14 +47,20 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 X_train_vec = vectorizer.fit_transform(X_train)
 X_test_vec = vectorizer.transform(X_test)
+# scaler = MaxAbsScaler()
+# print("With maxabsscaler")
+# X_train_vec = scaler.fit_transform(X_train_vec)
+# X_test_vec = scaler.transform(X_test_vec)
+
 
 # Training the model and evaluating per label
+print("Max iterations = 100")
+print("C=1.0")
 for label in labels:
     print(f"\n Training SVM for label: {label} (testset size: {y_test[label].shape[0]})")
     
-    clf = LinearSVC(max_iter=7500, random_state=42)
+    clf = LinearSVC(C=1.0, class_weight='balanced', max_iter=5000, random_state=42)
     clf.fit(X_train_vec, y_train[label])
     
     y_pred = clf.predict(X_test_vec)
     print(classification_report(y_test[label], y_pred))
-    print("\n Now comes the next label")
