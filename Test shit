@@ -1,68 +1,107 @@
 import os
+import numpy as np
 import pandas as pd
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.preprocessing import MaxAbsScaler
-from sklearn.svm import LinearSVC
-from sklearn.metrics import classification_report
+import tensorflow as tf
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, Conv1D, GlobalMaxPooling1D, Dense, Dropout
+from tensorflow.keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
 
-# Path to CSV file
+# --- 1. Data inladen ---
 current_directory = os.getcwd()
 processed_path = os.path.join(current_directory, 'data', 'train_processed+.csv')
 df = pd.read_csv(processed_path)
-# Deleting NaN values
 df = df[df['comment_text_clean'].notna()]
 
-# Toevoegen van binaire indicator of een comment enigszins toxisch is
-df["any_toxic"] = df[['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']].any(axis=1).astype(int)
-
-# CountVectorizer (unigrams + bigrams)
-print("Using CountVectorizer")
-vectorizer = CountVectorizer(
-    lowercase=False,    # already lowered
-    stop_words=None,    # stop words already removed
-    ngram_range=(1, 2), # just unigrams en bigrams
-    # max_features=20000 # limiting the vocabulary
-)
-
-# Fitting and transforming vectorizer
-X = vectorizer.fit_transform(df["comment_text_clean"])
-print(f"Vocab size: {len(vectorizer.vocabulary_)}")
-print(f"Matrix shape: {X.shape}")
-
-# Defining labels
+# Labels die je wil voorspellen
 labels = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
 
-# Splitting data in train (80%) and test (20%)
-X = df['comment_text_clean']
-y = df[labels + ['any_toxic']]  # 'any_toxic' toegevoegd
+# --- 2. Tekst tokenizen ---
+MAX_NUM_WORDS = 20000   # max aantal woorden in vocab
+MAX_SEQUENCE_LENGTH = 100  # max lengte per comment (woorden)
+
+tokenizer = Tokenizer(num_words=MAX_NUM_WORDS)
+tokenizer.fit_on_texts(df['comment_text_clean'])
+sequences = tokenizer.texts_to_sequences(df['comment_text_clean'])
+
+word_index = tokenizer.word_index
+print(f"Found {len(word_index)} unique tokens.")
+
+data = pad_sequences(sequences, maxlen=MAX_SEQUENCE_LENGTH)
+
+# Labels splitsen
+y = df[labels].values
+
+# Train-test split
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y['toxic']  # stratify on 'toxic' for balance
+    data, y, test_size=0.2, random_state=42, stratify=df['toxic']
 )
 
-X_train_vec = vectorizer.fit_transform(X_train)
-X_test_vec = vectorizer.transform(X_test)
-# scaler = MaxAbsScaler()
-# print("With maxabsscaler")
-# X_train_vec = scaler.fit_transform(X_train_vec)
-# X_test_vec = scaler.transform(X_test_vec)
+# --- 3. GloVe embeddings inladen ---
 
-# Training the model en evaluatie voor algemene toxiciteit
-print("Max iterations = 100")
-print("C=1.0")
-print(f"\n Training SVM for label: any_toxic (testset size: {y_test['any_toxic'].shape[0]})")
-clf = LinearSVC(C=1.0, class_weight='balanced', max_iter=5000, random_state=42)
-clf.fit(X_train_vec, y_train['any_toxic'])
-y_pred = clf.predict(X_test_vec)
-print(classification_report(y_test['any_toxic'], y_pred))
+# Download GloVe bestand en zet pad hier goed
+glove_dir = os.path.join(current_directory, 'glove.6B')
+glove_file = os.path.join(glove_dir, 'glove.6B.100d.txt')  # 100 dimension embeddings
 
-# Training the model and evaluating per label
-for label in labels:
-    print(f"\n Training SVM for label: {label} (testset size: {y_test[label].shape[0]})")
-    
-    clf = LinearSVC(C=1.0, class_weight='balanced', max_iter=5000, random_state=42)
-    clf.fit(X_train_vec, y_train[label])
-    
-    y_pred = clf.predict(X_test_vec)
-    print(classification_report(y_test[label], y_pred))
+embeddings_index = {}
+with open(glove_file, encoding='utf8') as f:
+    for line in f:
+        values = line.split()
+        word = values[0]
+        coefs = np.asarray(values[1:], dtype='float32')
+        embeddings_index[word] = coefs
+print(f"Found {len(embeddings_index)} word vectors in GloVe.")
+
+# --- 4. Embedding matrix maken ---
+embedding_dim = 100
+num_words = min(MAX_NUM_WORDS, len(word_index) + 1)
+embedding_matrix = np.zeros((num_words, embedding_dim))
+
+for word, i in word_index.items():
+    if i >= MAX_NUM_WORDS:
+        continue
+    embedding_vector = embeddings_index.get(word)
+    if embedding_vector is not None:
+        embedding_matrix[i] = embedding_vector
+    else:
+        # Word niet gevonden in GloVe, dan blijft 0-vector
+        pass
+
+# --- 5. CNN model bouwen ---
+
+model = Sequential()
+model.add(Embedding(input_dim=num_words,
+                    output_dim=embedding_dim,
+                    weights=[embedding_matrix],
+                    input_length=MAX_SEQUENCE_LENGTH,
+                    trainable=False))  # embeddings niet trainen, anders finetunen mogelijk
+
+model.add(Conv1D(filters=128, kernel_size=5, activation='relu'))
+model.add(GlobalMaxPooling1D())
+model.add(Dropout(0.5))
+model.add(Dense(6, activation='sigmoid'))  # 6 labels multi-label classificatie
+
+model.compile(loss='binary_crossentropy',
+              optimizer=Adam(learning_rate=1e-3),
+              metrics=['accuracy'])
+
+model.summary()
+
+# --- 6. Trainen ---
+
+history = model.fit(X_train, y_train,
+                    batch_size=128,
+                    epochs=5,
+                    validation_split=0.1)
+
+# --- 7. Evaluatie ---
+
+y_pred_prob = model.predict(X_test)
+y_pred = (y_pred_prob > 0.5).astype(int)
+
+for i, label in enumerate(labels):
+    print(f"\nClassification report for label: {label}")
+    print(classification_report(y_test[:, i], y_pred[:, i]))
