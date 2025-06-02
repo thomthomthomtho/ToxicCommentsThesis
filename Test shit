@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import pandas as pd
-import tensorflow as tf
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import Sequential
@@ -10,95 +9,78 @@ from tensorflow.keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 
-# --- 1. Data inladen ---
-current_directory = os.getcwd()
-processed_path = os.path.join(current_directory, 'data', 'train_processed+.csv')
-df = pd.read_csv(processed_path)
+# 1. Data inladen
+df = pd.read_csv("data/train_processed+.csv")
 df = df[df['comment_text_clean'].notna()]
-
-# Labels die je wil voorspellen
 labels = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
 
-# --- 2. Tekst tokenizen ---
-MAX_NUM_WORDS = 20000   # max aantal woorden in vocab
-MAX_SEQUENCE_LENGTH = 100  # max lengte per comment (woorden)
+# 2. Tokenizer instellen
+MAX_NUM_WORDS = 2000000  # > 2 miljoen woorden, om geen vocab-limit te zetten zoals jij eerder deed
+MAX_SEQUENCE_LENGTH = 100
 
 tokenizer = Tokenizer(num_words=MAX_NUM_WORDS)
 tokenizer.fit_on_texts(df['comment_text_clean'])
 sequences = tokenizer.texts_to_sequences(df['comment_text_clean'])
-
 word_index = tokenizer.word_index
 print(f"Found {len(word_index)} unique tokens.")
 
 data = pad_sequences(sequences, maxlen=MAX_SEQUENCE_LENGTH)
-
-# Labels splitsen
 y = df[labels].values
 
-# Train-test split
+# 3. Train-test split
 X_train, X_test, y_train, y_test = train_test_split(
     data, y, test_size=0.2, random_state=42, stratify=df['toxic']
 )
 
-# --- 3. GloVe embeddings inladen ---
-
-# Download GloVe bestand en zet pad hier goed
-glove_dir = os.path.join(current_directory, 'glove.6B')
-glove_file = os.path.join(glove_dir, 'glove.6B.100d.txt')  # 100 dimension embeddings
-
+# 4. GloVe Twitter-embeddings inladen
+glove_path = os.path.join("glove.twitter.27B", "glove.twitter.27B.100d.txt")  # <-- Jouw GloVe!
+embedding_dim = 100
 embeddings_index = {}
-with open(glove_file, encoding='utf8') as f:
+
+with open(glove_path, encoding='utf-8') as f:
     for line in f:
         values = line.split()
         word = values[0]
         coefs = np.asarray(values[1:], dtype='float32')
         embeddings_index[word] = coefs
-print(f"Found {len(embeddings_index)} word vectors in GloVe.")
+print(f"Loaded {len(embeddings_index)} word vectors from Twitter GloVe.")
 
-# --- 4. Embedding matrix maken ---
-embedding_dim = 100
+# 5. Embedding matrix bouwen
 num_words = min(MAX_NUM_WORDS, len(word_index) + 1)
 embedding_matrix = np.zeros((num_words, embedding_dim))
-
 for word, i in word_index.items():
     if i >= MAX_NUM_WORDS:
         continue
     embedding_vector = embeddings_index.get(word)
     if embedding_vector is not None:
         embedding_matrix[i] = embedding_vector
-    else:
-        # Word niet gevonden in GloVe, dan blijft 0-vector
-        pass
 
-# --- 5. CNN model bouwen ---
-
+# 6. CNN model gebaseerd op Zhang et al. (2018)
 model = Sequential()
 model.add(Embedding(input_dim=num_words,
                     output_dim=embedding_dim,
                     weights=[embedding_matrix],
                     input_length=MAX_SEQUENCE_LENGTH,
-                    trainable=False))  # embeddings niet trainen, anders finetunen mogelijk
+                    trainable=False))  # embeddings frozen zoals in paper
 
-model.add(Conv1D(filters=128, kernel_size=5, activation='relu'))
+model.add(Conv1D(filters=128, kernel_size=5, activation='relu'))  # zoals paper beschrijft
 model.add(GlobalMaxPooling1D())
-model.add(Dropout(0.5))
-model.add(Dense(6, activation='sigmoid'))  # 6 labels multi-label classificatie
+model.add(Dropout(0.5))  # regularisatie
+model.add(Dense(6, activation='sigmoid'))  # multi-label classificatie
 
-model.compile(loss='binary_crossentropy',
+model.compile(loss='binary_crossentropy',  # loss-functie past bij multilabel
               optimizer=Adam(learning_rate=1e-3),
               metrics=['accuracy'])
 
 model.summary()
 
-# --- 6. Trainen ---
-
+# 7. Model trainen
 history = model.fit(X_train, y_train,
                     batch_size=128,
                     epochs=5,
                     validation_split=0.1)
 
-# --- 7. Evaluatie ---
-
+# 8. Evaluatie
 y_pred_prob = model.predict(X_test)
 y_pred = (y_pred_prob > 0.5).astype(int)
 
