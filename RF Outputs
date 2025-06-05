@@ -1,5 +1,7 @@
+TF-IDF VECTORIZER
 best max Depth = no limiet
 Best vocab size = 5000
+only uni & bigrams
 Aantal trees = tussen 100 en 300 presteert evengoed soortvan
 Best min_samples_leaf=2
 Best min_samples_split=20
@@ -709,3 +711,10 @@ weighted avg       0.97      0.96      0.96     31893
     accuracy                           0.98     31893
    macro avg       0.60      0.78      0.64     31893
 weighted avg       0.99      0.98      0.98     31893
+
+
+
+AAAAAAAAADFEAEAFESFESFSEFESFCESFVCSEFSFVRSVSRVRDFVDRVDESGVSGVGSRGSBDFBDRBSVSVSEKJSEJCVAECVUYAWVCLUAECLUHACAHJKECBHJLAEBHJKAEVCLYUAGWVAEKJHWCBKAWBCVKHJAECLHJAEBCLJHAELCKAEHCBAEJHKCB
+
+
+Countvectorizer
