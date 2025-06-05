@@ -1,7 +1,7 @@
 (.venv) (base) thomdeveling@MacBook-Air-van-Thom-3 Thesis % "/Users/thomdeveling/Documents/Kunstmatige Intelligentie/Jaar 3/Thesis/.venv/bin/python" "/
 Users/thomdeveling/Documents/Kunstmatige Intelligentie/Jaar 3/Thesis/Random Forest.py"
 Using TfidfVectorizer
-Vocab size: 50000
+Vocab size: 500000
 Matrix shape: (127570, 50000)
 Random Forest settings:
 n_estimators = 100
