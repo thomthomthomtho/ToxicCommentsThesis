@@ -1,0 +1,315 @@
+TF-IDF VECTORIZER
+VOCAB: No limit (2+ mil)
+Max iterations: 5K
+C=1,0
+Uni + Bigrams
+
+(.venv) (base) thomdeveling@MacBook-Air-van-Thom-3 Thesis % "/Users/thomdeveling/Documents/Kunstmatige Intelligentie/Jaar 3/Thesis/.venv/bin/python" "/
+Users/thomdeveling/Documents/Kunstmatige Intelligentie/Jaar 3/Thesis/CountVectorizer(1,2).py"
+Using TfidfVectorizer
+Vocab size: 2039825
+Matrix shape: (127570, 2039825)
+Max iterations = 5000
+C=1.0
+
+ Training SVM for label: any_toxic (testset size: 31893)
+              precision    recall  f1-score   support
+
+           0       0.98      0.98      0.98     28650
+           1       0.80      0.79      0.79      3243
+
+    accuracy                           0.96     31893
+   macro avg       0.89      0.88      0.88     31893
+weighted avg       0.96      0.96      0.96     31893
+
+
+ Training SVM for label: toxic (testset size: 31893)
+              precision    recall  f1-score   support
+
+           0       0.98      0.98      0.98     28834
+           1       0.79      0.78      0.78      3059
+
+    accuracy                           0.96     31893
+   macro avg       0.88      0.88      0.88     31893
+weighted avg       0.96      0.96      0.96     31893
+
+
+ Training SVM for label: severe_toxic (testset size: 31893)
+              precision    recall  f1-score   support
+
+           0       1.00      0.99      0.99     31608
+           1       0.35      0.52      0.42       285
+
+    accuracy                           0.99     31893
+   macro avg       0.67      0.75      0.71     31893
+weighted avg       0.99      0.99      0.99     31893
+
+
+ Training SVM for label: obscene (testset size: 31893)
+              precision    recall  f1-score   support
+
+           0       0.99      0.99      0.99     30199
+           1       0.81      0.82      0.82      1694
+
+    accuracy                           0.98     31893
+   macro avg       0.90      0.90      0.90     31893
+weighted avg       0.98      0.98      0.98     31893
+
+
+ Training SVM for label: threat (testset size: 31893)
+              precision    recall  f1-score   support
+
+           0       1.00      1.00      1.00     31798
+           1       0.47      0.32      0.38        95
+
+    accuracy                           1.00     31893
+   macro avg       0.73      0.66      0.69     31893
+weighted avg       1.00      1.00      1.00     31893
+
+
+ Training SVM for label: insult (testset size: 31893)
+              precision    recall  f1-score   support
+
+           0       0.99      0.98      0.98     30324
+           1       0.68      0.75      0.71      1569
+
+    accuracy                           0.97     31893
+   macro avg       0.83      0.87      0.85     31893
+weighted avg       0.97      0.97      0.97     31893
+
+
+ Training SVM for label: identity_hate (testset size: 31893)
+              precision    recall  f1-score   support
+
+           0       1.00      1.00      1.00     31632
+           1       0.49      0.49      0.49       261
+
+    accuracy                           0.99     31893
+   macro avg       0.74      0.74      0.74     31893
+weighted avg       0.99      0.99      0.99     31893
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Count Vectorizer
+Zelfde als hierboven
+VOCAB = geen limit (2+ mil)
+Max iterations = 5K
+C=1.0
+Uni + Bigrams
+
+(.venv) (base) thomdeveling@MacBook-Air-van-Thom-3 Thesis % "/Users/thomdeveling/Documents/Kunstmatige Intelligentie/Jaar 3/Thesis/.venv/bin/python" "/
+Users/thomdeveling/Documents/Kunstmatige Intelligentie/Jaar 3/Thesis/CountVectorizer(1,2).py"
+Using CountVectorizer
+Vocab size: 2039825
+Matrix shape: (127570, 2039825)
+Max iterations = 5000
+C=1.0
+
+ Training SVM for label: any_toxic (testset size: 31893)
+/Users/thomdeveling/Documents/Kunstmatige Intelligentie/Jaar 3/Thesis/.venv/lib/python3.10/site-packages/sklearn/svm/_base.py:1249: ConvergenceWarning: Liblinear failed to converge, increase the number of iterations.
+  warnings.warn(
+              precision    recall  f1-score   support
+
+           0       0.97      0.98      0.98     28650
+           1       0.80      0.75      0.77      3243
+
+    accuracy                           0.96     31893
+   macro avg       0.89      0.86      0.87     31893
+weighted avg       0.95      0.96      0.95     31893
+
+
+ Training SVM for label: toxic (testset size: 31893)
+/Users/thomdeveling/Documents/Kunstmatige Intelligentie/Jaar 3/Thesis/.venv/lib/python3.10/site-packages/sklearn/svm/_base.py:1249: ConvergenceWarning: Liblinear failed to converge, increase the number of iterations.
+  warnings.warn(
+              precision    recall  f1-score   support
+
+           0       0.97      0.98      0.98     28834
+           1       0.79      0.73      0.76      3059
+
+    accuracy                           0.96     31893
+   macro avg       0.88      0.86      0.87     31893
+weighted avg       0.95      0.96      0.96     31893
+
+
+ Training SVM for label: severe_toxic (testset size: 31893)
+/Users/thomdeveling/Documents/Kunstmatige Intelligentie/Jaar 3/Thesis/.venv/lib/python3.10/site-packages/sklearn/svm/_base.py:1249: ConvergenceWarning: Liblinear failed to converge, increase the number of iterations.
+  warnings.warn(
+              precision    recall  f1-score   support
+
+           0       1.00      0.99      0.99     31608
+           1       0.35      0.48      0.40       285
+
+    accuracy                           0.99     31893
+   macro avg       0.67      0.73      0.70     31893
+weighted avg       0.99      0.99      0.99     31893
+
+
+ Training SVM for label: obscene (testset size: 31893)
+/Users/thomdeveling/Documents/Kunstmatige Intelligentie/Jaar 3/Thesis/.venv/lib/python3.10/site-packages/sklearn/svm/_base.py:1249: ConvergenceWarning: Liblinear failed to converge, increase the number of iterations.
+  warnings.warn(
+              precision    recall  f1-score   support
+
+           0       0.99      0.99      0.99     30199
+           1       0.82      0.77      0.79      1694
+
+    accuracy                           0.98     31893
+   macro avg       0.91      0.88      0.89     31893
+weighted avg       0.98      0.98      0.98     31893
+
+
+ Training SVM for label: threat (testset size: 31893)
+/Users/thomdeveling/Documents/Kunstmatige Intelligentie/Jaar 3/Thesis/.venv/lib/python3.10/site-packages/sklearn/svm/_base.py:1249: ConvergenceWarning: Liblinear failed to converge, increase the number of iterations.
+  warnings.warn(
+              precision    recall  f1-score   support
+
+           0       1.00      1.00      1.00     31798
+           1       0.26      0.37      0.31        95
+
+    accuracy                           1.00     31893
+   macro avg       0.63      0.68      0.65     31893
+weighted avg       1.00      1.00      1.00     31893
+
+
+ Training SVM for label: insult (testset size: 31893)
+/Users/thomdeveling/Documents/Kunstmatige Intelligentie/Jaar 3/Thesis/.venv/lib/python3.10/site-packages/sklearn/svm/_base.py:1249: ConvergenceWarning: Liblinear failed to converge, increase the number of iterations.
+  warnings.warn(
+              precision    recall  f1-score   support
+
+           0       0.98      0.99      0.98     30324
+           1       0.71      0.67      0.69      1569
+
+    accuracy                           0.97     31893
+   macro avg       0.85      0.83      0.84     31893
+weighted avg       0.97      0.97      0.97     31893
+
+
+ Training SVM for label: identity_hate (testset size: 31893)
+/Users/thomdeveling/Documents/Kunstmatige Intelligentie/Jaar 3/Thesis/.venv/lib/python3.10/site-packages/sklearn/svm/_base.py:1249: ConvergenceWarning: Liblinear failed to converge, increase the number of iterations.
+  warnings.warn(
+              precision    recall  f1-score   support
+
+           0       0.99      1.00      1.00     31632
+           1       0.48      0.39      0.43       261
+
+    accuracy                           0.99     31893
+   macro avg       0.74      0.69      0.71     31893
+weighted avg       0.99      0.99      0.99     31893
+
+
+
+
+
+
+
+
+
+
+GloVe Embeddings AAAAFFFFFF
+Parameters aanpassen heeft 0 zin --> LEG NOG UIT WAAROM!!!
+
+MAX_NUM_WORDS = 20000
+MAX_SEQUENCE_LENGTH = 200
+embedding_dim = 100
+
+C=1
+max_iter = 5000
+Found 164223 unique tokens.
+Loading GloVe: 1193514it [00:28, 42386.22it/s]
+Loaded 1193514 word vectors from GloVe.
+
+Found 164223 unique tokens.
+Loading GloVe: 1193514it [00:24, 48199.62it/s]
+Loaded 1193514 word vectors from GloVe.
+Samples zonder enige geldige GloVe embedding: 275 / 159463
+Gemiddeld aantal geldige woorden per comment: 28.05
+
+
+Training LinearSVC for label: toxic
+              precision    recall  f1-score   support
+
+           0       0.98      0.90      0.94     28834
+           1       0.47      0.84      0.60      3059
+
+    accuracy                           0.89     31893
+   macro avg       0.73      0.87      0.77     31893
+weighted avg       0.93      0.89      0.91     31893
+
+
+Training LinearSVC for label: severe_toxic
+              precision    recall  f1-score   support
+
+           0       1.00      0.94      0.97     31608
+           1       0.12      0.89      0.21       285
+
+    accuracy                           0.94     31893
+   macro avg       0.56      0.92      0.59     31893
+weighted avg       0.99      0.94      0.96     31893
+
+
+Training LinearSVC for label: obscene
+              precision    recall  f1-score   support
+
+           0       0.99      0.92      0.96     30199
+           1       0.39      0.87      0.54      1694
+
+    accuracy                           0.92     31893
+   macro avg       0.69      0.90      0.75     31893
+weighted avg       0.96      0.92      0.93     31893
+
+
+Training LinearSVC for label: threat
+              precision    recall  f1-score   support
+
+           0       1.00      0.91      0.95     31798
+           1       0.03      0.87      0.06        95
+
+    accuracy                           0.91     31893
+   macro avg       0.51      0.89      0.51     31893
+weighted avg       1.00      0.91      0.95     31893
+
+
+Training LinearSVC for label: insult
+              precision    recall  f1-score   support
+
+           0       0.99      0.92      0.95     30324
+           1       0.36      0.88      0.51      1569
+
+    accuracy                           0.92     31893
+   macro avg       0.67      0.90      0.73     31893
+weighted avg       0.96      0.92      0.93     31893
+
+
+Training LinearSVC for label: identity_hate
+              precision    recall  f1-score   support
+
+           0       1.00      0.91      0.95     31632
+           1       0.08      0.91      0.14       261
+
+    accuracy                           0.91     31893
+   macro avg       0.54      0.91      0.55     31893
+weighted avg       0.99      0.91      0.95     31893
+
+
+Training LinearSVC for overall toxic vs non-toxic
+
+Classification report for label: any_toxic
+              precision    recall  f1-score   support
+
+           0       0.98      0.90      0.94     28650
+           1       0.48      0.84      0.61      3243
+
+    accuracy                           0.89     31893
+   macro avg       0.73      0.87      0.77     31893
+weighted avg       0.93      0.89      0.90     31893
+
