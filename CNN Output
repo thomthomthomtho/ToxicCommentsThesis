@@ -507,7 +507,7 @@ Classification report for label: severe_toxic
               precision    recall  f1-score   support
 
            0       0.99      1.00      1.00     31608
-           1       0.56      0.12      0.19       285
+           1       0.56      0.12      0.44       285
 
     accuracy                           0.99     31893
    macro avg       0.78      0.56      0.59     31893
@@ -551,7 +551,7 @@ Classification report for label: identity_hate
               precision    recall  f1-score   support
 
            0       0.99      1.00      1.00     31632
-           1       0.63      0.23      0.34       261
+           1       0.63      0.23      0.37       261
 
     accuracy                           0.99     31893
    macro avg       0.81      0.61      0.67     31893
@@ -562,7 +562,7 @@ Overall Toxic vs Non-Toxic Classification:
               precision    recall  f1-score   support
 
            0       0.96      0.99      0.98     28650
-           1       0.90      0.65      0.76      3243
+           1       0.90      0.65      0.78      3243
 
     accuracy                           0.96     31893
    macro avg       0.93      0.82      0.87     31893
