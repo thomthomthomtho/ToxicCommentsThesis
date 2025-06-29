@@ -1,0 +1,223 @@
+CountVectorizer and TF-IDF:
+import os
+import pandas as pd
+import numpy as np
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Input, Conv1D, MaxPooling1D, Flatten, Dense, Dropout
+
+# --- 1. Load dataset ---
+df = pd.read_csv('/content/train_processed+.csv')
+df = df[df['comment_text_clean'].notna()]
+
+# Add binary label for "any toxic" (if any of the 6 toxic labels is 1)
+labels = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
+df["any_toxic"] = df[labels].any(axis=1).astype(int)
+all_labels = labels + ['any_toxic']
+
+# --- 2. Feature extraction: TF-IDF or CountVectorizer ---
+print("Using TfidfVectorizer")
+vectorizer = TfidfVectorizer(
+    lowercase=False,          # already lowercased
+    stop_words=None,          # stopwords already removed
+    ngram_range=(1, 2),       # unigrams and bigrams
+    max_features=4000         # limit vocab size
+)
+
+# (Of gebruik CountVectorizer i.p.v. TfidfVectorizer)
+# print("Using CountVectorizer")
+# vectorizer = CountVectorizer(
+#     lowercase=False,
+#     stop_words=None,
+#     ngram_range=(1, 2),
+#     max_features=4000
+# )
+
+# --- 3. Train/test split ---
+X = df['comment_text_clean']
+y = df[all_labels]
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y['toxic']
+)
+
+# --- 4. Vectorize text ---
+X_train_vec = vectorizer.fit_transform(X_train).toarray()
+X_test_vec = vectorizer.transform(X_test).toarray()
+
+print(f"Vocab size: {len(vectorizer.vocabulary_)}")
+print(f"Matrix shape: {X_train_vec.shape}")
+
+# Reshape for Conv1D input (samples, sequence_length, channels)
+X_train_cnn = X_train_vec[..., np.newaxis]
+X_test_cnn = X_test_vec[..., np.newaxis]
+
+# --- 5. Define CNN model ---
+def create_cnn(input_shape):
+    model = Sequential([
+        Input(shape=input_shape),
+        Conv1D(128, kernel_size=5, activation='relu'),
+        MaxPooling1D(pool_size=2),
+        Dropout(0.3),
+        Conv1D(64, kernel_size=3, activation='relu'),
+        MaxPooling1D(pool_size=2),
+        Flatten(),
+        Dense(64, activation='relu'),
+        Dropout(0.3),
+        Dense(1, activation='sigmoid')  # binary classification
+    ])
+    model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+    return model
+
+# --- 6. Train & evaluate CNN per label ---
+for label in all_labels:
+    print(f"\nTraining CNN for label: {label} (testset size: {y_test[label].shape[0]})")
+
+    model = create_cnn(input_shape=(X_train_cnn.shape[1], 1))
+    model.fit(
+        X_train_cnn, y_train[label].values,
+        epochs=5,
+        batch_size=70,
+        validation_split=0.1,
+        verbose=2
+    )
+
+    y_pred_prob = model.predict(X_test_cnn).ravel()
+    y_pred = (y_pred_prob > 0.5).astype(int)
+
+    print(classification_report(y_test[label], y_pred))
+
+
+
+
+
+
+
+
+
+
+GloVe embeddings:
+
+import os
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Input, Embedding, Conv1D, GlobalMaxPooling1D, Concatenate, Dense, Dropout
+from tensorflow.keras.optimizers import Adam
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+from tqdm import tqdm
+
+# --- 1. Load dataset ---
+df = pd.read_csv('/content/train_processed+.csv')
+df = df[df['comment_text_clean'].notna()]
+
+# Define label columns
+labels = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
+
+# --- 2. Tokenization ---
+MAX_NUM_WORDS = 20000       # max vocab size
+MAX_SEQUENCE_LENGTH = 200   # max comment length
+
+tokenizer = Tokenizer(num_words=MAX_NUM_WORDS)
+tokenizer.fit_on_texts(df['comment_text_clean'])
+sequences = tokenizer.texts_to_sequences(df['comment_text_clean'])
+
+word_index = tokenizer.word_index
+print(f"Found {len(word_index)} unique tokens.")
+
+data = pad_sequences(sequences, maxlen=MAX_SEQUENCE_LENGTH)
+y = df[labels].values
+
+# --- 3. Train/test split ---
+X_train, X_test, y_train, y_test = train_test_split(
+    data, y, test_size=0.2, random_state=42, stratify=df['toxic']
+)
+
+# --- 4. Load GloVe embeddings ---
+glove_file = '/content/glove.twitter.27B.100d.txt'
+embedding_dim = 100
+
+embeddings_index = {}
+with open(glove_file, encoding='utf8') as f:
+    for line in f:
+        values = line.split()
+        word = values[0]
+        coefs = np.asarray(values[1:], dtype='float32')
+        embeddings_index[word] = coefs
+
+print(f"Found {len(embeddings_index)} word vectors in GloVe.")
+
+# --- 5. Build embedding matrix ---
+num_words = min(MAX_NUM_WORDS, len(word_index) + 1)
+embedding_matrix = np.zeros((num_words, embedding_dim))
+for word, i in word_index.items():
+    if i >= MAX_NUM_WORDS:
+        continue
+    embedding_vector = embeddings_index.get(word)
+    if embedding_vector is not None:
+        embedding_matrix[i] = embedding_vector
+
+# --- 6. CNN-model (Kim, 2014 + 2018 Toxic Paper) ---
+input_layer = Input(shape=(MAX_SEQUENCE_LENGTH,))
+
+embedding_layer = Embedding(input_dim=num_words,
+                            output_dim=embedding_dim,
+                            weights=[embedding_matrix],
+                            input_length=MAX_SEQUENCE_LENGTH,
+                            trainable=False)(input_layer)
+
+# Convolutional layers for different n-gram filters
+conv_3 = Conv1D(filters=128, kernel_size=3, activation='relu')(embedding_layer)
+conv_4 = Conv1D(filters=128, kernel_size=4, activation='relu')(embedding_layer)
+conv_5 = Conv1D(filters=128, kernel_size=5, activation='relu')(embedding_layer)
+
+# Max pooling for each convolution
+pool_3 = GlobalMaxPooling1D()(conv_3)
+pool_4 = GlobalMaxPooling1D()(conv_4)
+pool_5 = GlobalMaxPooling1D()(conv_5)
+
+# Concatenate pooled features
+concat = Concatenate()([pool_3, pool_4, pool_5])
+
+# Dropout for regularization
+drop = Dropout(0.5)(concat)
+
+# Output layer with 6 sigmoid units for multilabel classification
+output_layer = Dense(len(labels), activation='sigmoid')(drop)
+
+# Build and compile model
+model = Model(inputs=input_layer, outputs=output_layer)
+model.compile(loss='binary_crossentropy',
+              optimizer=Adam(learning_rate=0.005),
+              metrics=['accuracy'])
+
+model.summary()
+
+# --- 7. Train model ---
+history = model.fit(X_train, y_train,
+                    batch_size=64,
+                    epochs=10,
+                    validation_split=0.1,
+                    verbose=2)
+
+# --- 8. Evaluate model ---
+y_pred_prob = model.predict(X_test)
+y_pred = (y_pred_prob > 0.5).astype(int)
+
+# Print classification report per label
+for i, label in enumerate(labels):
+    print(f"\nClassification report for label: {label}")
+    print(classification_report(y_test[:, i], y_pred[:, i]))
+
+# Overall toxic vs non-toxic classification
+y_test_overall = (y_test.sum(axis=1) > 0).astype(int)
+y_pred_overall = (y_pred.sum(axis=1) > 0).astype(int)
+
+print("\nOverall Toxic vs Non-Toxic Classification:")
+print(classification_report(y_test_overall, y_pred_overall))
