@@ -1,0 +1,145 @@
+CountVectorizer & TF-IDF:
+
+import os
+import pandas as pd
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.svm import LinearSVC
+from sklearn.metrics import classification_report
+from sklearn.model_selection import train_test_split
+
+# Read the data from the CSV file and adding it in a dataframe
+current_directory = os.getcwd()
+processed_path = os.path.join(current_directory, 'data', 'train_processed+.csv')
+df = pd.read_csv(processed_path)
+df = df[df['comment_text_clean'].notna()]
+
+# Creating and adding the 'any_toxic' label
+df["any_toxic"] = df[['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']].any(axis=1).astype(int)
+
+# Vectorizer settings of TF-IDF and CountVectorizer
+print("Using TfidfVectorizer")
+vectorizer = TfidfVectorizer(
+    lowercase=False,    # already lowered
+    stop_words=None,    # stop words already removed
+    ngram_range=(1, 2), # using unigrams en bigrams
+)
+# print("Using CountVectorizer")
+# vectorizer = CountVectorizer(
+#     lowercase=False,    # already lowered
+#     stop_words=None,    # stop words already removed
+#     ngram_range=(1, 2), # using unigrams en bigrams
+# )
+
+# Splitting data in train (80%) and test (20%)
+labels = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate', 'any_toxic']
+X = df['comment_text_clean']
+y = df[labels]
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42, stratify=y['toxic']  # stratify on 'toxic' for balance
+)
+# Preparing data for model training
+X_train_vec = vectorizer.fit_transform(X_train)
+X_test_vec = vectorizer.transform(X_test)
+
+# Training and evaluating each label
+for label in labels:
+    print(f"\n Training SVM for label: {label} (testset size: {y_test[label].shape[0]})")
+    
+    clf = LinearSVC(C=1.0, class_weight='balanced', max_iter=5000, random_state=42)
+    clf.fit(X_train_vec, y_train[label])
+    
+    y_pred = clf.predict(X_test_vec)
+    print(classification_report(y_test[label], y_pred))
+
+
+
+
+
+
+
+
+
+
+GloVe embeddings:
+
+import os
+import numpy as np
+import pandas as pd
+from sklearn.svm import LinearSVC
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+
+# Load data
+df = pd.read_csv('/content/train_processed+.csv')
+df = df[df['comment_text_clean'].notna()]
+
+# Define label columns
+labels = ['toxic', 'severe_toxic', 'obscene', 'threat', 'insult', 'identity_hate']
+
+# Tokenize and pad sequences
+MAX_NUM_WORDS = 20000
+MAX_SEQUENCE_LENGTH = 200
+
+tokenizer = Tokenizer(num_words=MAX_NUM_WORDS)
+tokenizer.fit_on_texts(df['comment_text_clean'])
+sequences = tokenizer.texts_to_sequences(df['comment_text_clean'])
+word_index = tokenizer.word_index
+data = pad_sequences(sequences, maxlen=MAX_SEQUENCE_LENGTH)
+
+# Load GloVe embeddings
+embedding_dim = 100
+glove_path = 'glove.twitter.27B.100d.txt'
+embeddings_index = {}
+
+with open(glove_path, encoding='utf8') as f:
+    for line in f:
+        values = line.split()
+        word = values[0]
+        coefs = np.asarray(values[1:], dtype='float32')
+        embeddings_index[word] = coefs
+
+# Build embedding matrix
+embedding_matrix = np.zeros((len(word_index) + 1, embedding_dim))
+for word, i in word_index.items():
+    embedding_vector = embeddings_index.get(word)
+    if embedding_vector is not None:
+        embedding_matrix[i] = embedding_vector
+
+# Average GloVe embedding per comment
+def get_average_embeddings(sequences, embedding_matrix):
+    avg_vectors = np.zeros((len(sequences), embedding_matrix.shape[1]))
+    for i, seq in enumerate(sequences):
+        valid_embeddings = [embedding_matrix[idx] for idx in seq if idx < embedding_matrix.shape[0] and np.any(embedding_matrix[idx])]
+        if valid_embeddings:
+            avg_vectors[i] = np.mean(valid_embeddings, axis=0)
+    return avg_vectors
+
+X_embed = get_average_embeddings(sequences, embedding_matrix)
+y = df[labels].values
+
+# Train/test split
+X_train, X_test, y_train, y_test = train_test_split(
+    X_embed, y, test_size=0.2, random_state=42, stratify=df['toxic']
+)
+
+# Train and evaluate SVM for each label
+for i, label in enumerate(labels):
+    clf = LinearSVC(C=1.0, class_weight='balanced', max_iter=100, random_state=42)
+    clf.fit(X_train, y_train[:, i])
+    y_pred = clf.predict(X_test)
+    print(f"\nClassification report for label: {label}")
+    print(classification_report(y_test[:, i], y_pred))
+
+# Train and evaluate 'any_toxic' label (1 if any label is positive)
+y_train_any = (y_train.sum(axis=1) > 0).astype(int)
+y_test_any = (y_test.sum(axis=1) > 0).astype(int)
+
+clf_any = LinearSVC(C=1.0, class_weight='balanced', max_iter=100, random_state=42)
+clf_any.fit(X_train, y_train_any)
+y_pred_any = clf_any.predict(X_test)
+
+print("\nClassification report for label: any_toxic")
+print(classification_report(y_test_any, y_pred_any))
